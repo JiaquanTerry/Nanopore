@@ -1,1 +1,25 @@
+#adapter trimming for TSZ4 nanopore reads
+porechop -i merged_barcode02_CLas.fastq -o TSZ4-nanopore-0.fastq
+
 #Quality checking  of nanopore reads
+NanoPlot --fastq TSZ4-nanopore-0.fastq -o /home/terryq/nanopore/0.quality-control/porechop_q -p TSZ4-nanopore-0 --N50
+
+#Quality filter without illumina short reads as reference
+filtlong --min_length 1000 --keep_percent 90 --target_bases 2000000000 TSZ4-nanopore-0.fastq > TSZ4-nanopore-1.fastq --min_mean_q 9
+
+#fasta to fastq
+paste - - - - < TSZ4-nanopore-1.fastq | cut -f 1,2 | sed 's/^@/>/' | tr "\t" "\n" > TSZ4-nanopore-1.fasta
+
+#CLas associated reads identified from TSZ4-nanopore-1.fastq
+kaiju -z 4 -t nodes.dmp -f CLas_3_ref_db.fmi -i TSZ4-nanopore-1.fastq -o ./kj_TSZ4_CLas.out -v -a greedy -e 2 -m 20 -E 0.00001
+kaiju2table -t nodes.dmp -n names.dmp -o kj_TSZ4_CLas.summary ./kj_TSZ4_CLas.out -p -r genus
+kaiju-addTaxonNames -t nodes.dmp -n names.dmp -i ./kj_TSZ4_CLas.out -o kj_TSZ4_CLas.names.out -u -p
+
+#Extract CLas reads from kaiju results
+grep "Liberibacter" kj_TSZ4_CLas.names.out > Liberibacter.txt
+cut -f 2 Liberibacter.txt > Liberibacter.list
+wc -l Liberibacter.list > Liberibacter.readnumbers
+perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' Liberibacter.list TSZ4-nanopore-1.fasta > Ex-CLas-nano.fasta
+
+
+
