@@ -47,11 +47,12 @@ flye --nano-corr Ex-CLas-nano_LP_corrected.fasta --out-dir /home/terryq/nanopore
 unicycler -l Ex-CLas-nano_LP_corrected.fasta -o /home/terryq/nanopore/3.assemble/uniclyer -t 4
 
 #Canu assembly
-canu -p CLas_LP -correct -d /home/terryq/nanopore/3.assemble/canu_2 genomeSize=1.4M -nanopore-raw Ex-CLas-nano_LP_corrected.fasta merylThreads=4 minInputCoverage=2 stopOnLowCoverage=2 rawErrorRate=0.500
-canu -p CLas_LP -trim-assemble -d /home/terryq/nanopore/3.assemble/canu_2 genomeSize=1.4M -nanopore-corrected CLas_LP.correctedReads.fasta.gz merylThreads=4 correctedErrorRate=0.144 minInputCoverage=2 stopOnLowCoverage=2
+canu -p CLas_LP -correct -d /home/terryq/nanopore/3.assemble/canu genomeSize=1.4M -nanopore-raw Ex-CLas-nano_LP_corrected.fasta merylThreads=4 minInputCoverage=2 stopOnLowCoverage=2 rawErrorRate=0.500
+canu -p CLas_LP -trim-assemble -d /home/terryq/nanopore/3.assemble/canu genomeSize=1.4M -nanopore-corrected CLas_LP.correctedReads.fasta.gz merylThreads=4 correctedErrorRate=0.144 minInputCoverage=2 stopOnLowCoverage=2
 
 #Polish Canu assembly contigs
 ##generate sorted bam file
-
-pilon canu_assembly.fasta 
+bowtie2-build -f Canu_assembly.fasta Canu_assembly
+bowtie2 -x Canu_assembly -q -1 TSZ4-uncitrus-R1.fastq -2 TSZ4-uncitrus-R2.fastq -S canu_assembly.sam -p 4 --sensitive 
+pilon --genome canu_assembly.fasta --frags canu_assembly.sorted.bam --outdir /home/terryq/nanopore/3.assemble/polish_canu
 
