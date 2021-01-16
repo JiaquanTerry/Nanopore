@@ -1,7 +1,9 @@
 If you want to process in your folder. Please set up a folder using linux command.
 
 mkdir 0.quality-control
-mkdir 1.
+mkdir 1.CLas_identified
+mkdir 2.Long_Corrected
+mkdir 3.assemble
 
 #adapter trimming for TSZ4 nanopore reads
 porechop -i merged_barcode02_CLas.fastq -o TSZ4-nanopore-0.fastq
