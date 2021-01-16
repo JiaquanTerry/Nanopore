@@ -1,3 +1,8 @@
+If you want to process in your folder. Please set up a folder using linux command.
+
+mkdir 0.quality-control
+mkdir 1.
+
 #adapter trimming for TSZ4 nanopore reads
 porechop -i merged_barcode02_CLas.fastq -o TSZ4-nanopore-0.fastq
 
@@ -21,5 +26,26 @@ cut -f 2 Liberibacter.txt > Liberibacter.list
 wc -l Liberibacter.list > Liberibacter.readnumbers
 perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' Liberibacter.list TSZ4-nanopore-1.fasta > Ex-CLas-nano.fasta
 
+#Statistic of Ex-CLas-nano.fasta
+quast.py Ex-CLas-nano.fasta -o Ex-CLas-nano -m 1000
+
+#Quality filter with illumina short reads as reference
+filtlong -1 TSZ4-uncitrus-R1.fastq -2 TSZ4-uncitrus-R1.fastq --min_length 1000 --keep_percent 90 --target_bases 500000000 --trim --split 1000 --length_weight 10 Ex-CLas-nano.fasta> Ex-CLas-nano_LP.fasta 
+
+#Long reads corrected with short reads using flmrc
+gunzip -c TSZ4-uncitrus-R1.fastq | awk 'NR % 4 == 2' | sort | gzip > reads.sorted.txt.gz
+gunzip -c reads.sorted.txt.gz | tr NT TN | ropebwt2 -LR | tr NT TN | fmlrc-convert /home/terryq/nanopore/2.Long_Corrected/TSZ4_comp_msbwt.npy
+fmlrc TSZ4_comp_msbwt.npy Ex-CLas-nano_LP.fasta Ex-CLas-nano_LP_corrected.fasta -p 4
+
+#Corrected long reads assembly
+#Flye assembly
+flye --nano-corr Ex-CLas-nano_LP_corrected.fasta --out-dir /home/terryq/nanopore/3.assemble/flye -g 1.5m -t 4 
+
+#Unicycler assembly
+unicycler -l Ex-CLas-nano_LP_corrected.fasta -o /home/terryq/nanopore/3.assemble/uniclyer -t 4
+
+#Canu assembly
+canu -p CLas_LP -correct -d /home/terryq/nanopore/3.assemble/canu genomeSize=1.4M -nanopore-raw Ex-CLas-nano_LP_corrected.fasta merylThreads=4 minInputCoverage=0 stopOnLowCoverage=0 rawErrorRate=0.500
+canu -p CLas_LP -trim-assemble -d /home/terryq/nanopore/3.assemble/canu genomeSize=1.4M -nanopore-corrected TSZ-4-CLas_filter_nano_LP_corrected.fasta merylThreads=4 correctedErrorRate=0.144 minInputCoverage=0 stopOnLowCoverage=0
 
 
