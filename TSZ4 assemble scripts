@@ -54,5 +54,8 @@ canu -p CLas_LP -trim-assemble -d /home/terryq/nanopore/3.assemble/canu genomeSi
 ##generate sorted bam file
 bowtie2-build -f Canu_assembly.fasta Canu_assembly
 bowtie2 -x Canu_assembly -q -1 TSZ4-uncitrus-R1.fastq -2 TSZ4-uncitrus-R2.fastq -S canu_assembly.sam -p 4 --sensitive 
-pilon --genome canu_assembly.fasta --frags canu_assembly.sorted.bam --outdir /home/terryq/nanopore/3.assemble/polish_canu
+samtools view -bS canu_assembly.sam -o canu_assembly.bam -u
+samtools sort canu_assembly.bam -o canu_assembly.sorted.bam -@ 3 -l 9
+samtools index canu_assembly.sorted.bam canu_assembly.sorted.bam.bai 
+pilon --genome Canu_assembly.fasta --frags canu_assembly.sorted.bam --outdir /home/terryq/nanopore/3.assemble/polish_canu
 
